@@ -20,7 +20,7 @@ export function EmailTable({
 }: {
   rows: EmailRow[];
   loading: boolean;
-  mode: "scheduled" | "sent";
+  mode: "scheduled" | "sent" | "failed";
 }) {
   // Only show the skeleton when there's truly nothing to display yet.
   // Once rows exist, a background refresh (polling, etc.) must never blank
@@ -45,10 +45,14 @@ export function EmailTable({
           <Inbox className="w-5 h-5 text-slate-300" />
         </div>
         <p className="text-sm font-medium text-slate-500">
-          {mode === "scheduled" ? "No scheduled emails yet" : "No emails have been sent yet"}
+          {mode === "scheduled" ? "No scheduled emails yet" : mode === "sent" ? "No emails have been sent yet" : "No failed emails"}
         </p>
         <p className="text-xs text-slate-400 mt-1">
-          {mode === "scheduled" ? "Compose a new email to get started." : "Sent emails will show up here."}
+          {mode === "scheduled"
+            ? "Compose a new email to get started."
+            : mode === "sent"
+              ? "Sent emails will show up here."
+              : "Emails that exhaust their retries will show up here."}
         </p>
       </div>
     );
@@ -62,7 +66,7 @@ export function EmailTable({
             <th className="py-2.5 pr-4 font-medium text-xs text-slate-400 uppercase tracking-wide">Recipient</th>
             <th className="py-2.5 pr-4 font-medium text-xs text-slate-400 uppercase tracking-wide">Subject</th>
             <th className="py-2.5 pr-4 font-medium text-xs text-slate-400 uppercase tracking-wide">
-              {mode === "scheduled" ? "Scheduled time" : "Sent time"}
+              {mode === "scheduled" || mode === "failed" ? "Scheduled time" : "Sent time"}
             </th>
             <th className="py-2.5 pr-4 font-medium text-xs text-slate-400 uppercase tracking-wide">Status</th>
             {mode === "sent" && (
@@ -78,7 +82,7 @@ export function EmailTable({
                 {row.subject}
               </td>
               <td className="py-3 pr-4 whitespace-nowrap text-slate-500">
-                {new Date(mode === "scheduled" ? row.scheduled_time : row.sent_time || row.scheduled_time).toLocaleString(
+                {new Date(mode === "sent" ? row.sent_time || row.scheduled_time : row.scheduled_time).toLocaleString(
                   undefined,
                   { dateStyle: "medium", timeStyle: "short" }
                 )}

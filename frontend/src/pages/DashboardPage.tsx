@@ -8,6 +8,7 @@ import {
   Slack as SlackIcon,
   Clock,
   CheckCircle2,
+  AlertCircle,
   ChevronDown,
 } from "lucide-react";
 import { api, Me, EmailRow, SlackStatus } from "../lib/api";
@@ -16,7 +17,7 @@ import { EmailTable } from "../components/EmailTable";
 import { ComposeModal } from "../components/ComposeModal";
 import { useToast } from "../components/Toast";
 
-type Tab = "scheduled" | "sent";
+type Tab = "scheduled" | "sent" | "failed";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ export default function DashboardPage() {
   // Each tab keeps its own cached row list. This means switching tabs never
   // shows the other tab's rows even for an instant, and a background
   // refresh for one tab can never bleed into what's displayed for another.
-  const [rowsByTab, setRowsByTab] = useState<Record<Tab, EmailRow[]>>({ scheduled: [], sent: [] });
+  const [rowsByTab, setRowsByTab] = useState<Record<Tab, EmailRow[]>>({ scheduled: [], sent: [], failed: [] });
   // Non-null while a search is active — what's displayed is search results
   // instead of the active tab's cached rows. Clearing search just switches
   // this back to null, instantly restoring the cached tab list with no
@@ -45,7 +46,7 @@ export default function DashboardPage() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [searching, setSearching] = useState(false);
-  const [counts, setCounts] = useState({ scheduled: 0, sent: 0 });
+  const [counts, setCounts] = useState({ scheduled: 0, sent: 0, failed: 0 });
 
   const rows = searchResults !== null ? searchResults : rowsByTab[tab];
 
@@ -68,7 +69,7 @@ export default function DashboardPage() {
   // *same* tab — this is what was letting the Scheduled tab intermittently
   // show stale or empty data. Kept per-tab (rather than one global counter)
   // so legitimate concurrent loads for different tabs don't cancel each other.
-  const requestSeqRef = useRef<Record<Tab, number>>({ scheduled: 0, sent: 0 });
+  const requestSeqRef = useRef<Record<Tab, number>>({ scheduled: 0, sent: 0, failed: 0 });
   const searchSeqRef = useRef(0);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -119,15 +120,16 @@ export default function DashboardPage() {
       setRefreshing(true);
     }
     try {
-      const [tabRows, scheduledRows, sentRows] = await Promise.all([
+      const [tabRows, scheduledRows, sentRows, failedRows] = await Promise.all([
         api.listEmails(targetTab),
         api.listEmails("scheduled"),
         api.listEmails("sent"),
+        api.listEmails("failed"),
       ]);
       if (seq !== requestSeqRef.current[targetTab]) return; // a newer load() for this tab superseded this one
       loadedTabsRef.current.add(targetTab);
       setRowsByTab((prev) => ({ ...prev, [targetTab]: tabRows }));
-      setCounts({ scheduled: scheduledRows.length, sent: sentRows.length });
+      setCounts({ scheduled: scheduledRows.length, sent: sentRows.length, failed: failedRows.length });
     } catch (err: any) {
       if (seq !== requestSeqRef.current[targetTab]) return;
       toast.show("error", err.message || "Failed to load emails.");
@@ -144,8 +146,12 @@ export default function DashboardPage() {
    * unfiltered list. */
   const refreshCounts = useCallback(async () => {
     try {
-      const [scheduledRows, sentRows] = await Promise.all([api.listEmails("scheduled"), api.listEmails("sent")]);
-      setCounts({ scheduled: scheduledRows.length, sent: sentRows.length });
+      const [scheduledRows, sentRows, failedRows] = await Promise.all([
+        api.listEmails("scheduled"),
+        api.listEmails("sent"),
+        api.listEmails("failed"),
+      ]);
+      setCounts({ scheduled: scheduledRows.length, sent: sentRows.length, failed: failedRows.length });
     } catch {
       // Silent — this is a background refresh, not a user-triggered action.
     }
@@ -332,7 +338,7 @@ export default function DashboardPage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-xl border border-slate-100 shadow-card px-5 py-4 flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
               <Clock className="w-4 h-4 text-amber-500" />
@@ -349,6 +355,15 @@ export default function DashboardPage() {
             <div>
               <p className="text-xs text-slate-400">Sent</p>
               <p className="text-lg font-semibold text-slate-900">{counts.sent}</p>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-100 shadow-card px-5 py-4 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+              <AlertCircle className="w-4 h-4 text-red-500" />
+            </div>
+            <div>
+              <p className="text-xs text-slate-400">Failed</p>
+              <p className="text-lg font-semibold text-slate-900">{counts.failed}</p>
             </div>
           </div>
         </div>
@@ -374,6 +389,15 @@ export default function DashboardPage() {
                   }`}
                 >
                   Sent
+                </button>
+                <button
+                  onClick={() => setTab("failed")}
+                  aria-pressed={tab === "failed"}
+                  className={`px-3.5 py-1.5 rounded-md text-sm font-medium transition ${
+                    tab === "failed" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  Failed
                 </button>
               </div>
               {/* Subtle, local indicator for background refreshes (polling,

@@ -130,8 +130,8 @@ emailsRouter.post("/api/emails/schedule", requireAuth, upload.single("leads"), a
 });
 
 emailsRouter.get("/api/emails", requireAuth, async (req: AuthedRequest, res) => {
-  const status = req.query.status as "scheduled" | "sent" | undefined;
-  const rows = await listByUser(req.userId!, status as any);
+  const status = req.query.status as "scheduled" | "sent" | "failed" | undefined;
+  const rows = await listByUser(req.userId!, status);
   res.json(rows);
 });
 

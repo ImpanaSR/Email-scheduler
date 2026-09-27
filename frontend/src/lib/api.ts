@@ -48,7 +48,7 @@ export const api = {
   slackStatus: () => request<SlackStatus>("/api/slack/status"),
   slackDisconnect: () => request<{ ok: boolean }>("/api/slack", { method: "DELETE" }),
 
-  listEmails: (status?: "scheduled" | "sent") =>
+  listEmails: (status?: "scheduled" | "sent" | "failed") =>
     request<EmailRow[]>(`/api/emails${status ? `?status=${status}` : ""}`),
 
   searchEmails: (q: string) => request<any[]>(`/api/emails/search?q=${encodeURIComponent(q)}`),
