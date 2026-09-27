@@ -56,9 +56,11 @@ authRouter.get("/auth/google/callback", async (req, res) => {
     });
 
     const session = signSession(user.id);
+    const isSecureFrontend = env.frontendUrl.startsWith("https://");
     res.cookie(AUTH_COOKIE, session, {
       httpOnly: true,
-      sameSite: "lax",
+      sameSite: isSecureFrontend ? "none" : "lax",
+      secure: isSecureFrontend,
       maxAge: 7 * 24 * 3600 * 1000,
     });
     res.redirect(`${env.frontendUrl}/dashboard`);

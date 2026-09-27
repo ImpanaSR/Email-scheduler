@@ -75,9 +75,11 @@ export default function DashboardPage() {
   useEffect(() => {
     api
       .me()
-      .then(setMe)
+      .then((user) => {
+        setMe(user);
+        api.slackStatus().then(setSlack).catch(() => {});
+      })
       .catch(() => navigate("/login"));
-    api.slackStatus().then(setSlack).catch(() => {});
 
     const params = new URLSearchParams(window.location.search);
     if (params.get("slack") === "connected") toast.show("success", "Slack connected — you'll get notified on rate-limit hits.");
@@ -150,8 +152,9 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    if (!me) return;
     load(tab);
-  }, [tab, load]);
+  }, [tab, load, me]);
 
   // Light polling so newly-sent/rate-limit-deferred emails show up without
   // a manual refresh. Always silent (never shows the skeleton), and skips
@@ -159,6 +162,7 @@ export default function DashboardPage() {
   // doesn't overwrite their search results.
   useEffect(() => {
     const id = setInterval(() => {
+      if (!me) return;
       if (searchRef.current.trim()) {
         refreshCounts();
       } else {
@@ -166,7 +170,7 @@ export default function DashboardPage() {
       }
     }, 5000);
     return () => clearInterval(id);
-  }, [load, refreshCounts]);
+  }, [load, refreshCounts, me]);
 
   useEffect(() => {
     return () => {
