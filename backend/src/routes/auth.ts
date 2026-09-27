@@ -59,7 +59,7 @@ authRouter.get("/auth/google/callback", async (req, res) => {
     const isSecureFrontend = env.frontendUrl.startsWith("https://");
     res.cookie(AUTH_COOKIE, session, {
       httpOnly: true,
-      sameSite: isSecureFrontend ? "none" : "lax",
+      sameSite: "lax",
       secure: isSecureFrontend,
       maxAge: 7 * 24 * 3600 * 1000,
     });
