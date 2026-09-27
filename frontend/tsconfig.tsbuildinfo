@@ -1,0 +1,1 @@
+{"root":["./src/main.tsx","./src/vite-env.d.ts","./src/components/Button.tsx","./src/components/ComposeModal.tsx","./src/components/EmailTable.tsx","./src/components/Field.tsx","./src/components/Modal.tsx","./src/components/StatusBadge.tsx","./src/components/Toast.tsx","./src/lib/api.ts","./src/pages/DashboardPage.tsx","./src/pages/LoginPage.tsx"],"version":"5.9.3"}
