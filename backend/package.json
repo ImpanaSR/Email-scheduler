@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "worker": "ts-node-dev --respawn --transpile-only src/queue/worker.ts",
-    "build": "tsc -p tsconfig.json",
-    "start": "node dist/index.js",
+    "build": "tsc -p tsconfig.json && cp src/db/schema.sql dist/db/schema.sql",
+    "start": "node dist/db/migrate.js && node dist/index.js",
     "start:worker": "node dist/queue/worker.js",
     "migrate": "ts-node src/db/migrate.ts",
     "typecheck": "tsc --noEmit"
