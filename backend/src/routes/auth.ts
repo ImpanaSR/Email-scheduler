@@ -5,6 +5,10 @@ import { signSession, requireAuth, AUTH_COOKIE, AuthedRequest } from "../middlew
 
 export const authRouter = Router();
 
+const googleCallbackUrl = env.frontendUrl.startsWith("https://")
+  ? new URL("/auth/google/callback", env.frontendUrl).toString()
+  : env.googleCallbackUrl;
+
 /**
  * Real Google OAuth 2.0 authorization-code flow, implemented with plain
  * fetch calls against Google's endpoints (no passport dependency, to keep
@@ -14,7 +18,7 @@ export const authRouter = Router();
 authRouter.get("/auth/google", (req, res) => {
   const params = new URLSearchParams({
     client_id: env.googleClientId,
-    redirect_uri: env.googleCallbackUrl,
+    redirect_uri: googleCallbackUrl,
     response_type: "code",
     scope: "openid email profile",
     prompt: "select_account",
@@ -34,7 +38,7 @@ authRouter.get("/auth/google/callback", async (req, res) => {
         code,
         client_id: env.googleClientId,
         client_secret: env.googleClientSecret,
-        redirect_uri: env.googleCallbackUrl,
+        redirect_uri: googleCallbackUrl,
         grant_type: "authorization_code",
       }),
     });
