@@ -1,3 +1,17 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://email-scheduler-production-d1cf.up.railway.app/api/:path*"
+    },
+    {
+      "source": "/auth/:path*",
+      "destination": "https://email-scheduler-production-d1cf.up.railway.app/auth/:path*"
+    },
+    {
+      "source": "/slack/:path*",
+      "destination": "https://email-scheduler-production-d1cf.up.railway.app/slack/:path*"
+    },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
